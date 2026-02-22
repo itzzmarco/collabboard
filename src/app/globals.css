@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+/* Design tokens matching prototype (§1.1) — #f8fafc, #1e293b, #3b82f6, etc. */
+@theme {
+  /* Colors */
+  --color-background: #f8fafc;
+  --color-foreground: #1e293b;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #2563eb;
+  --color-border: #e2e8f0;
+  --color-muted: #64748b;
+  --color-muted-foreground: #475569;
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-accent: hsl(240 4.8% 95.9%);
+  --color-accent-foreground: hsl(240 5.9% 10%);
+  --color-secondary: hsl(240 4.8% 95.9%);
+  --color-secondary-foreground: hsl(240 5.9% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(217 91% 60%);
+  /* Card palette (sticky notes) */
+  --color-card-yellow: #fef9c3;
+  --color-card-blue: #dbeafe;
+  --color-card-green: #dcfce7;
+  --color-card-pink: #fce7f3;
+  --color-card-purple: #f3e8ff;
+  --color-card-orange: #ffedd5;
+  /* Radius */
+  --radius: 0.625rem;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: #64748b;
+  --muted-foreground: #475569;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 217 91% 60%;
+}
+
+/* shadcn/ui animation utilities (tailwindcss-animate replacement for v4) */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+      rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+      rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+.animate-in {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+}
+
+.animate-out {
+  animation-name: exit;
+  animation-duration: 150ms;
+  --tw-exit-opacity: initial;
+  --tw-exit-scale: initial;
+  --tw-exit-rotate: initial;
+  --tw-exit-translate-x: initial;
+  --tw-exit-translate-y: initial;
+}
+
+.fade-in-0 { --tw-enter-opacity: 0; }
+.fade-out-0 { --tw-exit-opacity: 0; }
+.fade-out-80 { --tw-exit-opacity: 0.8; }
+.zoom-in-95 { --tw-enter-scale: 0.95; }
+.zoom-out-95 { --tw-exit-scale: 0.95; }
+
+.slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
+.slide-in-from-bottom-2 { --tw-enter-translate-y: 0.5rem; }
+.slide-in-from-left-2 { --tw-enter-translate-x: -0.5rem; }
+.slide-in-from-right-2 { --tw-enter-translate-x: 0.5rem; }
+.slide-in-from-top-full { --tw-enter-translate-y: -100%; }
+.slide-in-from-bottom-full { --tw-enter-translate-y: 100%; }
+.slide-in-from-left-1\/2 { --tw-enter-translate-x: -50%; }
+.slide-in-from-top-\[48\%\] { --tw-enter-translate-y: -48%; }
+
+.slide-out-to-right-full { --tw-exit-translate-x: 100%; }
+.slide-out-to-left-1\/2 { --tw-exit-translate-x: -50%; }
+.slide-out-to-top-\[48\%\] { --tw-exit-translate-y: -48%; }
+
+@media (min-width: 640px) {
+  .sm\:slide-in-from-bottom-full { --tw-enter-translate-y: 100%; }
+}
+
+/* Grid dot background */
+.grid-bg {
+  background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Landing page demo mockup animations (kept for future landing) */
+@keyframes landing-cursor-move-1 {
+  0%, 100% { transform: translate(80px, 60px); }
+  25% { transform: translate(200px, 120px); }
+  50% { transform: translate(300px, 80px); }
+  75% { transform: translate(150px, 160px); }
+}
+@keyframes landing-cursor-move-2 {
+  0%, 100% { transform: translate(500px, 120px); }
+  25% { transform: translate(400px, 200px); }
+  50% { transform: translate(600px, 100px); }
+  75% { transform: translate(550px, 180px); }
+}
+@keyframes landing-cursor-move-3 {
+  0%, 100% { transform: translate(300px, 250px); }
+  25% { transform: translate(450px, 280px); }
+  50% { transform: translate(350px, 320px); }
+  75% { transform: translate(250px, 300px); }
+}
+@keyframes landing-draw-line {
+  0% { stroke-dashoffset: 400; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+.landing-cursor-1 { animation: landing-cursor-move-1 8s ease-in-out infinite; }
+.landing-cursor-2 { animation: landing-cursor-move-2 9s ease-in-out infinite; }
+.landing-cursor-3 { animation: landing-cursor-move-3 7s ease-in-out infinite; }
+.landing-draw-path {
+  stroke-dasharray: 400;
+  animation: landing-draw-line 4s ease-in-out infinite;
+}
+.landing-demo-note {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.landing-demo-note:hover {
+  transform: translateY(-4px) rotate(1deg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
