@@ -1,11 +1,78 @@
 'use client'
 
+import { useRef, useState, useEffect } from 'react'
 import { useBoardStore } from '@/stores/board-store'
 
 export default function PresenceCursors() {
   const presenceCursors = useBoardStore((s) => s.presenceCursors)
   const zoom = useBoardStore((s) => s.zoom)
   const pan = useBoardStore((s) => s.pan)
+
+  const displayedRef = useRef<Record<string, { x: number; y: number }>>({})
+  const [tick, setTick] = useState(0)
+
+  // Sync displayedRef keys with presenceCursors
+  useEffect(() => {
+    // Initialise new cursors at their target position
+    for (const key of Object.keys(presenceCursors)) {
+      if (!(key in displayedRef.current)) {
+        displayedRef.current[key] = {
+          x: presenceCursors[key].x,
+          y: presenceCursors[key].y,
+        }
+      }
+    }
+    // Remove stale keys
+    for (const key of Object.keys(displayedRef.current)) {
+      if (!(key in presenceCursors)) {
+        delete displayedRef.current[key]
+      }
+    }
+  }, [presenceCursors])
+
+  // RAF lerp loop
+  useEffect(() => {
+    let rafId: number
+    let prevTs: number | null = null
+
+    const loop = (ts: number) => {
+      if (prevTs === null) {
+        prevTs = ts
+      }
+      const dt = ts - prevTs
+      prevTs = ts
+
+      const alpha = 1 - Math.exp(-dt / 100)
+      const targets = useBoardStore.getState().presenceCursors
+      let allClose = true
+
+      for (const key of Object.keys(displayedRef.current)) {
+        const target = targets[key]
+        if (!target) continue
+
+        const cur = displayedRef.current[key]
+        const newX = cur.x + (target.x - cur.x) * alpha
+        const newY = cur.y + (target.y - cur.y) * alpha
+
+        if (Math.hypot(newX - target.x, newY - target.y) >= 0.5) {
+          allClose = false
+        }
+
+        displayedRef.current[key] = { x: newX, y: newY }
+      }
+
+      if (!allClose) {
+        setTick((t) => t + 1)
+      }
+
+      rafId = requestAnimationFrame(loop)
+    }
+
+    rafId = requestAnimationFrame(loop)
+    return () => {
+      cancelAnimationFrame(rafId)
+    }
+  }, [])
 
   const entries = Object.values(presenceCursors)
 
@@ -19,8 +86,11 @@ export default function PresenceCursors() {
       }}
     >
       {entries.map((cursor) => {
-        const screenX = (cursor.x + pan.x) * zoom
-        const screenY = (cursor.y + pan.y) * zoom
+        const displayed = displayedRef.current[cursor.userId]
+        const cx = displayed?.x ?? cursor.x
+        const cy = displayed?.y ?? cursor.y
+        const screenX = (cx + pan.x) * zoom
+        const screenY = (cy + pan.y) * zoom
         return (
           <div
             key={cursor.userId}

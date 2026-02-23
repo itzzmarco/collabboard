@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { useBoardStore } from '@/stores/board-store'
 import { useRealtimeBoard } from '@/hooks/use-realtime-board'
+import { upsertEditorSession } from '@/app/actions/editor-session'
 import BoardHeader from './BoardHeader'
 import Toolbar from './Toolbar'
 import Canvas from './Canvas'
@@ -22,6 +23,7 @@ interface BoardEditorProps {
   userProfile: { displayName: string; avatarColor: string }
   isViewOnly?: boolean
   guestJwt?: string | null
+  canExport?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -36,6 +38,7 @@ export default function BoardEditor({
   userProfile,
   isViewOnly = false,
   guestJwt,
+  canExport = true,
 }: BoardEditorProps) {
   // ---- Hydrate the Zustand store on mount ----------------------------------
   const initBoard = useBoardStore((s) => s.initBoard)
@@ -56,6 +59,7 @@ export default function BoardEditor({
     broadcastCardDragEnd,
     broadcastDrawStroke,
     broadcastDrawStrokeEnd,
+    broadcastViewport,
   } = useRealtimeBoard(initialBoard.id, userId, userProfile, guestJwt)
 
   // ---- handleAddCard -------------------------------------------------------
@@ -179,21 +183,36 @@ export default function BoardEditor({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleAddCard])
 
+  // ---- Editor session heartbeat (all non-view-only users) -----------------
+  useEffect(() => {
+    if (isViewOnly) return
+
+    upsertEditorSession(initialBoard.id)
+    const interval = setInterval(() => {
+      upsertEditorSession(initialBoard.id)
+    }, 30_000)
+
+    return () => clearInterval(interval)
+  }, [isViewOnly, initialBoard.id])
+
   // ---- Render --------------------------------------------------------------
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden">
-      <BoardHeader onTitleSave={handleTitleSave} onExport={() => setExportOpen(true)} />
-      <div className="flex flex-1 overflow-hidden">
+      <BoardHeader onTitleSave={handleTitleSave} onExport={() => setExportOpen(true)} canExport={canExport} />
+      <div className="flex flex-1 overflow-hidden pb-[60px] sm:pb-0">
         <Toolbar onAddCard={handleAddCard} onClearPaths={handleClearPaths} />
-        <Canvas
-          outerRef={outerCanvasRef}
-          zoomPanRef={zoomPanRef}
-          onCursorMove={broadcastCursor}
-          onCardDragBroadcast={broadcastCardDrag}
-          onCardDragEndBroadcast={broadcastCardDragEnd}
-          onDrawBroadcast={broadcastDrawStroke}
-          onDrawEndBroadcast={broadcastDrawStrokeEnd}
-        />
+        <div className="will-change-transform flex-1 overflow-hidden">
+          <Canvas
+            outerRef={outerCanvasRef}
+            zoomPanRef={zoomPanRef}
+            onCursorMove={broadcastCursor}
+            onCardDragBroadcast={broadcastCardDrag}
+            onCardDragEndBroadcast={broadcastCardDragEnd}
+            onDrawBroadcast={broadcastDrawStroke}
+            onDrawEndBroadcast={broadcastDrawStrokeEnd}
+            onViewportBroadcast={broadcastViewport}
+          />
+        </div>
       </div>
       <ExportDialog
         open={exportOpen}

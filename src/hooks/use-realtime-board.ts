@@ -7,7 +7,7 @@ import { useBoardStore } from '@/stores/board-store'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { PresenceCursor, BroadcastStroke } from '@/types'
 
-const CURSOR_THROTTLE_MS = 50
+const CURSOR_THROTTLE_MS = 16
 
 export interface UseRealtimeBoardResult {
   broadcastCursor: (canvasX: number, canvasY: number) => void
@@ -19,6 +19,7 @@ export interface UseRealtimeBoardResult {
     size: number,
   ) => void
   broadcastDrawStrokeEnd: () => void
+  broadcastViewport: (pan: { x: number; y: number }, zoom: number) => void
 }
 
 export function useRealtimeBoard(
@@ -29,9 +30,14 @@ export function useRealtimeBoard(
 ): UseRealtimeBoardResult {
   const boardClientRef = useRef<SupabaseClient<any, any, any> | null>(null)
   const lastCursorTime = useRef(0)
+  const lastCardDragTime = useRef(0)
+  const lastDrawStrokeTime = useRef(0)
   const presenceChannelRef = useRef<RealtimeChannel | null>(null)
   const broadcastChannelRef = useRef<RealtimeChannel | null>(null)
   const postgresChannelRef = useRef<RealtimeChannel | null>(null)
+
+  const setLatestRemoteViewport = useBoardStore((s) => s.setLatestRemoteViewport)
+  const lastViewportTime = useRef(0)
 
   const setPresenceCursors = useBoardStore((s) => s.setPresenceCursors)
   const setGhostCardPosition = useBoardStore((s) => s.setGhostCardPosition)
@@ -119,6 +125,9 @@ export function useRealtimeBoard(
         .on('broadcast', { event: 'draw_stroke_end' }, () => {
           setGhostStroke(null)
         })
+        .on('broadcast', { event: 'viewport' }, ({ payload }) => {
+          setLatestRemoteViewport(payload as { pan: { x: number; y: number }; zoom: number })
+        })
         .subscribe()
 
       if (cancelled) return
@@ -187,6 +196,7 @@ export function useRealtimeBoard(
     setGhostCardPosition,
     clearGhostCardPosition,
     setGhostStroke,
+    setLatestRemoteViewport,
     applyRemoteCardUpdate,
     applyRemotePathUpdate,
     guestJwt,
@@ -212,6 +222,9 @@ export function useRealtimeBoard(
   )
 
   const broadcastCardDrag = useCallback((cardId: string, x: number, y: number) => {
+    const now = Date.now()
+    if (now - lastCardDragTime.current < 16) return
+    lastCardDragTime.current = now
     const channel = broadcastChannelRef.current
     if (channel?.state === 'joined') {
       channel.send({ type: 'broadcast', event: 'card_drag', payload: { cardId, x, y } })
@@ -227,6 +240,9 @@ export function useRealtimeBoard(
 
   const broadcastDrawStroke = useCallback(
     (points: Array<{ x: number; y: number }>, color: string, size: number) => {
+      const now = Date.now()
+      if (now - lastDrawStrokeTime.current < 16) return
+      lastDrawStrokeTime.current = now
       const channel = broadcastChannelRef.current
       if (channel?.state === 'joined') {
         channel.send({ type: 'broadcast', event: 'draw_stroke', payload: { color, size, points } })
@@ -242,11 +258,25 @@ export function useRealtimeBoard(
     }
   }, [])
 
+  const broadcastViewport = useCallback(
+    (pan: { x: number; y: number }, zoom: number) => {
+      const now = Date.now()
+      if (now - lastViewportTime.current < 100) return
+      lastViewportTime.current = now
+      const channel = broadcastChannelRef.current
+      if (channel?.state === 'joined') {
+        channel.send({ type: 'broadcast', event: 'viewport', payload: { pan, zoom } })
+      }
+    },
+    [],
+  )
+
   return {
     broadcastCursor,
     broadcastCardDrag,
     broadcastCardDragEnd,
     broadcastDrawStroke,
     broadcastDrawStrokeEnd,
+    broadcastViewport,
   }
 }

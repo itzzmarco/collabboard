@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default function DemoPage() {
   const boardId = process.env.DEMO_BOARD_ID
   const viewToken = process.env.DEMO_VIEW_TOKEN

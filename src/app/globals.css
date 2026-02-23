@@ -3,11 +3,11 @@
 /* Design tokens matching prototype (§1.1) — #f8fafc, #1e293b, #3b82f6, etc. */
 @theme {
   /* Colors */
-  --color-background: #f8fafc;
+  --color-background: #f9fafb;
   --color-foreground: #1e293b;
-  --color-primary: #3b82f6;
+  --color-primary: #1d4ed8;
   --color-primary-foreground: #ffffff;
-  --color-primary-hover: #2563eb;
+  --color-primary-hover: #1e40af;
   --color-border: #e2e8f0;
   --color-muted: #64748b;
   --color-muted-foreground: #475569;
@@ -22,7 +22,7 @@
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(222 47% 11%);
   --color-input: hsl(214 32% 91%);
-  --color-ring: hsl(217 91% 60%);
+  --color-ring: #1d4ed8;
   /* Card palette (sticky notes) */
   --color-card-yellow: #fef9c3;
   --color-card-blue: #dbeafe;
@@ -35,17 +35,24 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: #f8fafc;
+  --background: #f9fafb;
   --foreground: #1e293b;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --primary: #3b82f6;
+  --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
@@ -57,7 +64,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 217 91% 60%;
+  --ring: 217 91% 40%;
 }
 
 .dark {
@@ -150,6 +157,28 @@
   background-size: 24px 24px;
 }
 
+.glass-surface {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+
+.hero-gradient {
+  background-image: 
+    linear-gradient(to bottom, #ffffff 0%, rgba(240,247,255,0.5) 50%, #f9fafb 100%),
+    radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+  background-size: 100% 100%, 24px 24px;
+}
+
 /* Landing page demo mockup animations (kept for future landing) */
 @keyframes landing-cursor-move-1 {
   0%, 100% { transform: translate(80px, 60px); }
@@ -187,4 +216,19 @@
 .landing-demo-note:hover {
   transform: translateY(-4px) rotate(1deg);
   box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* High-contrast focus rings (a11y) */
+*:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

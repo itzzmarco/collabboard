@@ -28,7 +28,7 @@ export function DashboardHeader({
   const initials = (profile?.display_name?.trim()?.[0] ?? userEmail?.trim()?.[0] ?? '?').toUpperCase()
 
   return (
-    <header className="sticky top-0 z-10 h-14 border-b border-slate-200 bg-white flex items-center justify-between px-6">
+    <header className="sticky top-0 z-10 h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6">
       <Link
         href="/dashboard"
         className="flex items-center gap-2 font-semibold text-[14px] text-slate-800"
@@ -41,7 +41,13 @@ export function DashboardHeader({
       <div className="flex items-center gap-3">
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-slate-800 text-white hover:bg-slate-900 h-9 px-4 text-[13px]"
+          className="sm:hidden bg-slate-800 text-white hover:bg-slate-900 h-9 px-3 text-[13px]"
+        >
+          +
+        </Button>
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="hidden sm:inline-flex bg-slate-800 text-white hover:bg-slate-900 h-9 px-4 text-[13px]"
         >
           + New Board
         </Button>
@@ -58,10 +64,14 @@ export function DashboardHeader({
               </Avatar>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="text-xs text-slate-500 font-normal truncate">
               {userEmail}
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => { window.location.href = '/billing' }}>
+              Billing
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => signOut()}>Sign out</DropdownMenuItem>
             <DropdownMenuItem

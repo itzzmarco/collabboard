@@ -13,6 +13,7 @@ import {
 import { useBoardStore, DRAW_COLORS } from '@/stores/board-store'
 import type { Tool } from '@/stores/board-store'
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -54,6 +55,7 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
   const setZoom = useBoardStore((s) => s.setZoom)
   const setPan = useBoardStore((s) => s.setPan)
   const setDrawingOptions = useBoardStore((s) => s.setDrawingOptions)
+  const reducedMotion = useReducedMotion()
 
   const handleToolClick = (toolId: Tool) => {
     if (toolId === 'sticky') {
@@ -81,33 +83,63 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
 
   return (
     <aside
-      className="flex flex-col items-center bg-white border-r py-3 gap-1"
-      style={{ width: 52 }}
+      className={cn(
+        'fixed bottom-0 left-0 right-0 z-10',
+        'flex flex-row items-center justify-around',
+        'glass-surface pb-safe border-t py-1 px-2',
+        'sm:relative sm:bottom-auto sm:left-auto sm:right-auto',
+        'sm:flex-col sm:justify-start',
+        'sm:bg-white sm:backdrop-filter-none',
+        'sm:border-r sm:border-t-0',
+        'sm:py-3 sm:gap-1 sm:w-[52px]',
+      )}
     >
       {/* ---- Tool Buttons ---- */}
       {TOOLS.map(({ id, icon: Icon, label, shortcut }) => {
         const isActive = tool === id
         return (
-          <button
-            key={id}
-            title={`${label} (${shortcut})`}
-            onClick={() => handleToolClick(id)}
-            className={cn(
-              'flex items-center justify-center rounded-lg transition',
-              isActive
-                ? 'text-primary bg-blue-50'
-                : 'text-muted hover:text-foreground hover:bg-slate-100',
+          <div key={id} className="relative">
+            {isActive && !reducedMotion && (
+              <motion.div
+                layoutId="active-tool-pill"
+                className="absolute inset-0 rounded-lg bg-blue-50"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
             )}
-            style={{ width: 36, height: 36 }}
-          >
-            <Icon size={18} />
-          </button>
+            <motion.button
+              title={`${label} (${shortcut})`}
+              onClick={() => handleToolClick(id)}
+              whileHover={{ scale: reducedMotion ? 1 : 1.08 }}
+              whileTap={{ scale: reducedMotion ? 1 : 0.92 }}
+              className={cn(
+                'relative flex items-center justify-center rounded-lg transition w-11 h-11 sm:w-9 sm:h-9',
+                isActive
+                  ? 'text-primary'
+                  : 'text-muted hover:text-foreground hover:bg-slate-100',
+                reducedMotion && isActive && 'bg-blue-50'
+              )}
+            >
+              <Icon size={18} />
+            </motion.button>
+          </div>
         )
       })}
 
       {/* ---- Drawing Options Panel ---- */}
+      <AnimatePresence>
       {tool === 'draw' && (
-        <div className="flex flex-col items-center gap-2 border-t mt-2 pt-2 w-full px-2">
+        <motion.div
+          initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+          transition={{ duration: reducedMotion ? 0 : 0.15 }}
+          className={cn(
+            'absolute bottom-full left-0 right-0 z-20',
+            'flex flex-row flex-wrap items-center justify-center gap-2',
+            'bg-white border-t border-b px-3 py-2',
+            'sm:relative sm:bottom-auto sm:flex-col sm:border-t sm:border-b-0 sm:mt-2 sm:pt-2 sm:w-full sm:px-2',
+          )}
+        >
           {/* Color buttons */}
           <div className="flex flex-wrap justify-center gap-1">
             {DRAW_COLORS.map((color) => {
@@ -117,16 +149,18 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
                   key={color}
                   title={color}
                   onClick={() => setDrawingOptions({ color })}
-                  className="rounded transition"
-                  style={{
-                    width: 18,
-                    height: 18,
-                    backgroundColor: color,
-                    border: isSelected
-                      ? '2px solid #3b82f6'
-                      : '2px solid transparent',
-                  }}
-                />
+                  className="flex items-center justify-center rounded transition w-11 h-11 sm:w-[18px] sm:h-[18px]"
+                >
+                  <span
+                    className="block rounded w-5 h-5 sm:w-full sm:h-full"
+                    style={{
+                      backgroundColor: color,
+                      border: isSelected
+                        ? '2px solid #3b82f6'
+                        : '2px solid transparent',
+                    }}
+                  />
+                </button>
               )
             })}
           </div>
@@ -141,10 +175,9 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
                   title={`Size ${size}`}
                   onClick={() => setDrawingOptions({ size })}
                   className={cn(
-                    'flex items-center justify-center rounded-lg transition',
+                    'flex items-center justify-center rounded-lg transition w-11 h-11 sm:w-6 sm:h-6',
                     isSelected ? 'bg-blue-50' : 'hover:bg-slate-100',
                   )}
-                  style={{ width: 24, height: 24 }}
                 >
                   <span
                     className="rounded-full bg-current"
@@ -162,27 +195,28 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
           <button
             title="Clear all drawings"
             onClick={onClearPaths}
-            className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition"
-            style={{ width: 36, height: 36 }}
+            className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition w-11 h-11 sm:w-9 sm:h-9"
           >
             <Eraser size={18} />
           </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* ---- Spacer ---- */}
-      <div className="flex-1" />
+      <div className="hidden sm:flex flex-1" />
 
       {/* ---- Zoom Controls ---- */}
-      <div className="flex flex-col items-center gap-1 border-t pt-2 w-full">
-        <button
+      <div className="flex flex-row sm:flex-col items-center gap-1 border-l sm:border-l-0 sm:border-t pl-2 sm:pl-0 sm:pt-2 sm:w-full">
+        <motion.button
           title="Zoom in"
           onClick={handleZoomIn}
-          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition"
-          style={{ width: 36, height: 36 }}
+          whileHover={{ scale: reducedMotion ? 1 : 1.08 }}
+          whileTap={{ scale: reducedMotion ? 1 : 0.92 }}
+          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition w-11 h-11 sm:w-9 sm:h-9"
         >
           <ZoomIn size={18} />
-        </button>
+        </motion.button>
 
         <span
           className="text-muted text-center select-none"
@@ -191,23 +225,25 @@ export default function Toolbar({ onAddCard, onClearPaths }: ToolbarProps) {
           {Math.round(zoom * 100)}%
         </span>
 
-        <button
+        <motion.button
           title="Zoom out"
           onClick={handleZoomOut}
-          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition"
-          style={{ width: 36, height: 36 }}
+          whileHover={{ scale: reducedMotion ? 1 : 1.08 }}
+          whileTap={{ scale: reducedMotion ? 1 : 0.92 }}
+          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition w-11 h-11 sm:w-9 sm:h-9"
         >
           <ZoomOut size={18} />
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
           title="Reset view"
           onClick={handleZoomReset}
-          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition"
-          style={{ width: 36, height: 36 }}
+          whileHover={{ scale: reducedMotion ? 1 : 1.08 }}
+          whileTap={{ scale: reducedMotion ? 1 : 0.92 }}
+          className="flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-slate-100 transition w-11 h-11 sm:w-9 sm:h-9"
         >
           <Maximize2 size={18} />
-        </button>
+        </motion.button>
       </div>
     </aside>
   )

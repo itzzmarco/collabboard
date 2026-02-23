@@ -14,7 +14,7 @@ export default function DemoMockup() {
           <span className="text-[13px] font-medium text-slate-500">Product Roadmap Q1</span>
         </div>
         {/* Canvas */}
-        <div className="h-[400px] relative overflow-hidden grid-bg">
+        <div className="h-[280px] sm:h-[400px] relative overflow-hidden grid-bg">
           {/* Sticky notes */}
           <div className="absolute left-[60px] top-[50px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#fef3c7] border border-[#fcd34d] text-[#92400e]">
             User Research<br /><br />Interview customers<br />Analyze feedback
@@ -22,10 +22,10 @@ export default function DemoMockup() {
           <div className="absolute left-[260px] top-[70px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#dbeafe] border border-[#93c5fd] text-[#1e40af]">
             Design Sprint<br /><br />Wireframes<br />Prototype v1
           </div>
-          <div className="absolute left-[460px] top-[50px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#dcfce7] border border-[#86efac] text-[#166534]">
+          <div className="hidden sm:block absolute left-[460px] top-[50px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#dcfce7] border border-[#86efac] text-[#166534]">
             Development<br /><br />MVP features<br />API integration
           </div>
-          <div className="absolute left-[660px] top-[70px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#fce7f3] border border-[#f9a8d4] text-[#9d174d]">
+          <div className="hidden sm:block absolute left-[660px] top-[70px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#fce7f3] border border-[#f9a8d4] text-[#9d174d]">
             Launch<br /><br />Beta release<br />Gather feedback
           </div>
           <div className="absolute left-[160px] top-[220px] landing-demo-note w-[160px] p-3.5 rounded-lg text-xs font-medium leading-relaxed shadow-sm bg-[#ede9fe] border border-[#c4b5fd] text-[#5b21b6]">

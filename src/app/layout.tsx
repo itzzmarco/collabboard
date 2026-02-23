@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
@@ -11,10 +11,21 @@ export const metadata: Metadata = {
   description: 'Real-time collaborative whiteboard',
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-black focus:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Skip to main content
+        </a>
         {children}
         <Toaster />
       </body>

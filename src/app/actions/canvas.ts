@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { verifyGuestJwt } from '@/lib/jwt'
+import { compressPoints, decompressPoints } from '@/lib/drawing-utils'
 import type { Card, DrawingPath } from '@/types'
 
 async function getClient(guestJwt?: string | null, boardId?: string | null) {
@@ -88,7 +89,7 @@ export async function insertPath(
     board_id: payload.board_id,
     color: payload.color,
     size: payload.size,
-    points: payload.points as unknown as Record<string, unknown>,
+    points: compressPoints(payload.points) as unknown as Record<string, unknown>,
     client_mutation_id: payload.client_mutation_id,
   })
   return { error: error ? error.message : null }
@@ -160,7 +161,7 @@ export async function fetchBoardData(
 
   const paths: DrawingPath[] = (pathsResult.data ?? []).map((row) => ({
     ...row,
-    points: row.points as unknown as Array<{ x: number; y: number }>,
+    points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
   }))
 
   return {

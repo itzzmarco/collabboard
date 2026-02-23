@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Palette, Trash2 } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useBoardStore } from '@/stores/board-store'
 import type { Card } from '@/types'
 
@@ -49,6 +50,7 @@ export default function StickyCard({ card }: StickyCardProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [localContent, setLocalContent] = useState(card.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const reducedMotion = useReducedMotion()
 
   // Sync local content when the card content changes externally
   useEffect(() => {
@@ -86,6 +88,13 @@ export default function StickyCard({ card }: StickyCardProps) {
     setEditingCard(card.id)
   }
 
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isViewOnly) return
+    e.stopPropagation()
+    setSelectedCard(card.id)
+    setEditingCard(card.id)
+  }
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value
     setLocalContent(newContent)
@@ -116,9 +125,15 @@ export default function StickyCard({ card }: StickyCardProps) {
     : '0 1px 3px rgba(0,0,0,0.08)'
 
   return (
-    <div
+    <motion.div
       data-card-id={card.id}
       onDoubleClick={handleDoubleClick}
+      onTouchEnd={handleTouchEnd}
+      whileHover={{
+        y: reducedMotion ? 0 : -2,
+        boxShadow: reducedMotion ? boxShadow : '0 4px 12px rgba(0,0,0,0.12)',
+      }}
+      transition={{ duration: 0.15 }}
       style={{
         position: 'absolute',
         left: card.x,
@@ -156,25 +171,9 @@ export default function StickyCard({ card }: StickyCardProps) {
         >
           {/* Palette button */}
           <button
+            type="button"
             onClick={handleToggleColorPicker}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f1f5f9'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
-            }}
+            className="flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent cursor-pointer text-slate-500 transition-colors duration-150 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             aria-label="Change color"
           >
             <Palette size={16} />
@@ -182,27 +181,9 @@ export default function StickyCard({ card }: StickyCardProps) {
 
           {/* Delete button */}
           <button
+            type="button"
             onClick={handleDelete}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#fef2f2'
-              e.currentTarget.style.color = '#ef4444'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.color = '#64748b'
-            }}
+            className="flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent cursor-pointer text-slate-500 transition-colors duration-150 hover:bg-red-50 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             aria-label="Delete card"
           >
             <Trash2 size={16} />
@@ -245,7 +226,7 @@ export default function StickyCard({ card }: StickyCardProps) {
                 padding: 0,
                 flexShrink: 0,
               }}
-              aria-label={`Color ${i}`}
+              aria-label={`Select color ${i + 1}`}
             />
           ))}
         </div>
@@ -329,6 +310,6 @@ export default function StickyCard({ card }: StickyCardProps) {
           )
         })
       }
-    </div>
+    </motion.div>
   )
 }

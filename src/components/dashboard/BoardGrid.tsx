@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { MoreHorizontal, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { NewBoardModal } from './NewBoardModal'
+import { EmptyState } from './EmptyState'
 import { renameBoard, deleteBoard } from '@/app/actions/board'
 import { useToast } from '@/hooks/use-toast'
 import type { Board } from '@/types'
@@ -54,6 +57,7 @@ function BoardCard({ board, cardColors, onRename, onDelete }: BoardCardProps) {
   const [renameValue, setRenameValue] = useState(board.title)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [loading, setLoading] = useState(false)
+  const x = useMotionValue(0)
 
   useEffect(() => {
     if (!isRenaming) setRenameValue(board.title)
@@ -112,25 +116,41 @@ function BoardCard({ board, cardColors, onRename, onDelete }: BoardCardProps) {
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleCardClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault()
-            const target = e.target as HTMLElement
-            if (
-              target.closest("[data-board-card-menu]") ||
-              target.closest("input")
-            ) {
-              return
+      <div className="relative overflow-hidden rounded-xl">
+        <div className="absolute inset-y-0 right-0 w-[72px] flex items-center justify-center bg-red-500 rounded-r-xl">
+          <Trash2 className="text-white h-5 w-5" />
+        </div>
+        <motion.div
+          style={{ x }}
+          role="button"
+          aria-label={board.title}
+          tabIndex={0}
+          onClick={handleCardClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              const target = e.target as HTMLElement
+              if (
+                target.closest("[data-board-card-menu]") ||
+                target.closest("input")
+              ) {
+                return
+              }
+              router.push(`/board/${board.id}`)
             }
-            router.push(`/board/${board.id}`)
-          }
-        }}
-        className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-      >
+          }}
+          drag="x"
+          dragConstraints={{ left: -72, right: 0 }}
+          dragElastic={0.05}
+          onDragEnd={(_, info) => {
+            if (info.offset.x <= -60) {
+              setShowDeleteDialog(true)
+            } else {
+              animate(x, 0, { type: "spring", stiffness: 300, damping: 30 })
+            }
+          }}
+          className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 relative z-10"
+        >
         <div
           className={
             cardColors.length === 0
@@ -177,7 +197,7 @@ function BoardCard({ board, cardColors, onRename, onDelete }: BoardCardProps) {
             <div data-board-card-menu onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 shrink-0" aria-label="Board options">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -207,9 +227,18 @@ function BoardCard({ board, cardColors, onRename, onDelete }: BoardCardProps) {
             Updated {formatRelativeTime(board.updated_at)}
           </span>
         </div>
+        </motion.div>
       </div>
 
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <Dialog 
+        open={showDeleteDialog} 
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open)
+          if (!open) {
+            animate(x, 0, { type: "spring", stiffness: 300, damping: 30 })
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete board?</DialogTitle>
@@ -238,6 +267,17 @@ function BoardCard({ board, cardColors, onRename, onDelete }: BoardCardProps) {
       </Dialog>
     </>
   )
+}
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } }
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
 }
 
 export function BoardGrid({
@@ -285,33 +325,137 @@ export function BoardGrid({
   if (localBoards.length === 0) {
     return (
       <>
-        <div className="flex flex-col items-center justify-center py-24 gap-4 rounded-xl border border-slate-200 bg-white">
-          <LayoutGrid size={48} className="text-slate-300" />
-          <h3 className="text-lg font-semibold text-slate-700">No boards yet</h3>
-          <p className="text-sm text-slate-500">Create your first board</p>
-          <Button
-            onClick={() => setModalOpen(true)}
-            className="bg-slate-800 text-white hover:bg-slate-900"
-          >
-            Create your first board
-          </Button>
-        </div>
+        <EmptyState onNewBoard={() => setModalOpen(true)} />
         <NewBoardModal open={modalOpen} onOpenChange={setModalOpen} />
       </>
     )
   }
 
+  if (localBoards.length > 20) {
+    return (
+      <VirtualizedBoardGrid
+        boards={localBoards}
+        cardColorMap={cardColorMap}
+        handleRename={handleRename}
+        handleDelete={handleDelete}
+      />
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {localBoards.map((board) => (
-        <BoardCard
-          key={board.id}
-          board={board}
-          cardColors={cardColorMap[board.id] ?? []}
-          onRename={handleRename}
-          onDelete={handleDelete}
-        />
-      ))}
+    <motion.div 
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      role="grid"
+      aria-label="Your boards"
+    >
+      <AnimatePresence mode="popLayout">
+        {localBoards.map((board) => (
+          <motion.div
+            key={board.id}
+            variants={cardVariants}
+            layout
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          >
+            <BoardCard
+              board={board}
+              cardColors={cardColorMap[board.id] ?? []}
+              onRename={handleRename}
+              onDelete={handleDelete}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+function VirtualizedBoardGrid({
+  boards,
+  cardColorMap,
+  handleRename,
+  handleDelete,
+}: {
+  boards: Board[]
+  cardColorMap: Record<string, number[]>
+  handleRename: (id: string, newTitle: string) => Promise<void>
+  handleDelete: (id: string) => Promise<void>
+}) {
+  const [columns, setColumns] = useState(1)
+
+  useEffect(() => {
+    const updateColumns = () => {
+      if (window.innerWidth >= 1024) setColumns(4)
+      else if (window.innerWidth >= 640) setColumns(2)
+      else setColumns(1)
+    }
+    updateColumns()
+    window.addEventListener('resize', updateColumns)
+    return () => window.removeEventListener('resize', updateColumns)
+  }, [])
+
+  const rows = Math.ceil(boards.length / columns)
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rows,
+    estimateSize: () => 160,
+    overscan: 2,
+  })
+
+  return (
+    <div
+      style={{
+        height: `${rowVirtualizer.getTotalSize()}px`,
+        width: '100%',
+        position: 'relative',
+      }}
+      role="grid"
+      aria-label="Your boards"
+    >
+      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+        const rowBoards = boards.slice(
+          virtualRow.index * columns,
+          (virtualRow.index + 1) * columns
+        )
+        return (
+          <motion.div
+            key={virtualRow.index}
+            ref={rowVirtualizer.measureElement}
+            data-index={virtualRow.index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence mode="popLayout">
+              {rowBoards.map((board) => (
+                <motion.div
+                  key={board.id}
+                  variants={cardVariants}
+                  layout
+                  whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                >
+                  <BoardCard
+                    board={board}
+                    cardColors={cardColorMap[board.id] ?? []}
+                    onRename={handleRename}
+                    onDelete={handleDelete}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )
+      })}
     </div>
   )
 }

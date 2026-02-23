@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { resolveEntitlements } from '@/lib/entitlements'
+import type { BillingState } from '@/types'
 
 export type Template = 'blank' | 'sprint' | 'brainstorm' | 'retrospective'
 
@@ -79,6 +81,37 @@ export async function createBoard(
   } = await supabase.auth.getUser()
   if (!user) {
     return { error: 'Not authenticated' }
+  }
+
+  // Plan-based board cap enforcement via entitlements
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, past_due_grace_until')
+    .eq('id', user.id)
+    .single()
+
+  const billing: BillingState | null = profile
+    ? {
+        plan: profile.plan as BillingState['plan'],
+        subscription_status: profile.subscription_status,
+        current_period_end: profile.current_period_end,
+        stripe_customer_id: profile.stripe_customer_id,
+        stripe_subscription_id: profile.stripe_subscription_id,
+        cancel_at_period_end: profile.cancel_at_period_end,
+        past_due_grace_until: profile.past_due_grace_until,
+      }
+    : null
+  const ent = resolveEntitlements(billing)
+
+  if (ent.boards !== Infinity) {
+    const { count } = await supabase
+      .from('boards')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', user.id)
+
+    if ((count ?? 0) >= ent.boards) {
+      return { error: 'limit_reached' }
+    }
   }
 
   const p_cards = template === 'blank' ? [] : TEMPLATE_CARDS[template]

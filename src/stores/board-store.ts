@@ -8,6 +8,7 @@ import {
   updateBoardTitle as updateBoardTitleAction,
   fetchBoardData,
 } from '@/app/actions/canvas'
+import { decompressPoints } from '@/lib/drawing-utils'
 import { toast } from '@/hooks/use-toast'
 import type {
   Board,
@@ -85,6 +86,7 @@ interface BoardState {
   presenceCursors: Record<string, PresenceCursor>
   ghostCardPositions: Record<string, { x: number; y: number }>
   ghostStroke: BroadcastStroke | null
+  latestRemoteViewport: { pan: { x: number; y: number }; zoom: number } | null
 }
 
 interface BoardActions {
@@ -166,6 +168,7 @@ interface BoardActions {
   setGhostCardPosition: (cardId: string, pos: { x: number; y: number }) => void
   clearGhostCardPosition: (cardId: string) => void
   setGhostStroke: (stroke: BroadcastStroke | null) => void
+  setLatestRemoteViewport: (viewport: { pan: { x: number; y: number }; zoom: number } | null) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +249,12 @@ const contentDebounce = new Map<
   { timer: ReturnType<typeof setTimeout>; beforeSnapshot: Card }
 >()
 
+// Debounce state for card-move persists (50ms)
+const movePersistDebounce = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; clientMutationId: string }
+>()
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -283,6 +292,7 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
   presenceCursors: {},
   ghostCardPositions: {},
   ghostStroke: null,
+  latestRemoteViewport: null,
 
   // ----- Hydration ---------------------------------------------------------
   initBoard: (board, cards, paths, isViewOnly, guestJwt) => {
@@ -492,12 +502,21 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
     }))
   },
 
-  // ----- Commit drag position (undo + persist) ----------------------------
+  // ----- Commit drag position (undo + debounced persist) ------------------
   commitCardMove: (id, before) => {
     if (get().isViewOnly) return
     const card = get().cards.find((c) => c.id === id)
     if (!card) return
     if (card.x === before.x && card.y === before.y) return
+
+    // Cancel any existing debounce for this card
+    const existing = movePersistDebounce.get(id)
+    if (existing) {
+      clearTimeout(existing.timer)
+      // Remove the old clientMutationId from pending set
+      set((state) => removeMutationId(state, existing.clientMutationId))
+      movePersistDebounce.delete(id)
+    }
 
     const clientMutationId = crypto.randomUUID()
     const beforeCard: Card = { ...card, x: before.x, y: before.y }
@@ -509,6 +528,7 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
       after: card,
     }
 
+    // Update local state immediately (undo entry + pendingMutationIds)
     set((state) => ({
       cards: state.cards.map((c) =>
         c.id === id ? { ...c, client_mutation_id: clientMutationId } : c,
@@ -519,14 +539,23 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
       saveStatus: 'saving',
     }))
 
-    upsertCard(cardToPayload(card, clientMutationId), get().guestJwt).then(({ error }) => {
-      set((state) => removeMutationId(state, clientMutationId))
-      if (error) {
-        handlePersistError(set, get, error)
-      } else {
-        markSaved(set, get)
-      }
-    })
+    // Schedule persist after 50ms debounce
+    const timer = setTimeout(() => {
+      movePersistDebounce.delete(id)
+      const latestCard = get().cards.find((c) => c.id === id)
+      if (!latestCard) return
+
+      upsertCard(cardToPayload(latestCard, clientMutationId), get().guestJwt).then(({ error }) => {
+        set((state) => removeMutationId(state, clientMutationId))
+        if (error) {
+          handlePersistError(set, get, error)
+        } else {
+          markSaved(set, get)
+        }
+      })
+    }, 50)
+
+    movePersistDebounce.set(id, { timer, clientMutationId })
   },
 
   // ----- Commit resize (undo + persist) -----------------------------------
@@ -1013,10 +1042,14 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
       if (clientMutationId != null && pendingMutationIds.has(clientMutationId)) {
         return
       }
-      const path = payload as DrawingPath
+      const rawPath = payload as DrawingPath
+      const path: DrawingPath = {
+        ...rawPath,
+        points: decompressPoints(rawPath.points as unknown as Array<Record<string, number>>),
+      }
       set((state) => {
         if (state.paths.some((p) => p.id === path.id)) return state
-        return { paths: [...state.paths, { ...path } as DrawingPath] }
+        return { paths: [...state.paths, path] }
       })
       return
     }
@@ -1048,5 +1081,9 @@ export const useBoardStore = create<BoardState & BoardActions>()((set, get) => (
 
   setGhostStroke: (stroke) => {
     set({ ghostStroke: stroke })
+  },
+
+  setLatestRemoteViewport: (viewport) => {
+    set({ latestRemoteViewport: viewport })
   },
 }))

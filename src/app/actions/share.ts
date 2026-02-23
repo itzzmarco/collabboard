@@ -29,6 +29,21 @@ function signJwt(payload: Record<string, unknown>): string {
 }
 
 // ---------------------------------------------------------------------------
+// mintBoardViewJwt — view-scoped JWT for read-only board access
+// ---------------------------------------------------------------------------
+
+export async function mintBoardViewJwt(boardId: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+  return signJwt({
+    sub: 'guest',
+    role: 'anon',
+    board_id: boardId,
+    permission: 'view',
+    exp: now + 60 * 60, // 1 hour
+  })
+}
+
+// ---------------------------------------------------------------------------
 // generateShareToken
 // ---------------------------------------------------------------------------
 

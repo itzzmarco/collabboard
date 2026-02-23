@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TemplateSelector } from './TemplateSelector'
+import Link from 'next/link'
 import { createBoard, type Template } from '@/app/actions/board'
 
 export function NewBoardModal({
@@ -70,7 +71,16 @@ export function NewBoardModal({
               className="mt-1.5"
             />
             {error && (
-              <p className="text-sm text-red-500 mt-1.5">{error}</p>
+              error === 'limit_reached' ? (
+                <p className="text-sm text-red-500 mt-1.5">
+                  You&apos;ve reached the 5-board limit on the Free plan.{' '}
+                  <Link href="/pricing" className="font-medium underline hover:no-underline">
+                    Upgrade for unlimited boards
+                  </Link>
+                </p>
+              ) : (
+                <p className="text-sm text-red-500 mt-1.5">{error}</p>
+              )
             )}
           </div>
           <div>

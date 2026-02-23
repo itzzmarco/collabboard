@@ -76,3 +76,13 @@ export interface BroadcastStroke {
   size: number
   points: Array<{ x: number; y: number }>
 }
+
+export interface BillingState {
+  plan: 'free' | 'pro' | 'team'
+  subscription_status: string | null
+  current_period_end: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  cancel_at_period_end: boolean
+  past_due_grace_until: string | null
+}
