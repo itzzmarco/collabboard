@@ -5,6 +5,7 @@ import { validateShareToken, mintBoardViewJwt } from '@/app/actions/share'
 import BoardEditor from '@/components/board/BoardEditor'
 import EditorCapReached from '@/components/board/EditorCapReached'
 import { resolveEntitlements } from '@/lib/entitlements'
+import { decompressPoints } from '@/lib/drawing-utils'
 import type { Card, DrawingPath, BillingState } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -66,7 +67,7 @@ export default async function BoardPage({
         const voCards: Card[] = (crRes.data ?? []) as Card[]
         const voPaths: DrawingPath[] = (dpRes.data ?? []).map((row) => ({
           ...row,
-          points: row.points as unknown as Array<{ x: number; y: number }>,
+          points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
         })) as DrawingPath[]
         const voProfile = prRes.data
         return (
@@ -131,7 +132,7 @@ export default async function BoardPage({
       const cards: Card[] = (cardsResult.data ?? []) as Card[]
       const paths: DrawingPath[] = (pathsResult.data ?? []).map((row) => ({
         ...row,
-        points: row.points as unknown as Array<{ x: number; y: number }>,
+        points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
       })) as DrawingPath[]
 
       const profile = profileResult.data
@@ -176,7 +177,7 @@ export default async function BoardPage({
     const cards: Card[] = (cardsResult.data ?? []) as Card[]
     const paths: DrawingPath[] = (pathsResult.data ?? []).map((row) => ({
       ...row,
-      points: row.points as unknown as Array<{ x: number; y: number }>,
+      points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
     })) as DrawingPath[]
 
     return (
@@ -222,10 +223,10 @@ export default async function BoardPage({
 
   const cards: Card[] = (cardsResult.data ?? []) as Card[]
 
-  // Cast points column from Json back to typed array
+  // Cast points column from Json back to typed array (decompress delta-encoded)
   const paths: DrawingPath[] = (pathsResult.data ?? []).map((row) => ({
     ...row,
-    points: row.points as unknown as Array<{ x: number; y: number }>,
+    points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
   })) as DrawingPath[]
 
   const profile = profileResult.data

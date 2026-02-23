@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { decompressPoints } from '@/lib/drawing-utils'
 import type { Card, DrawingPath } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -124,10 +125,10 @@ export async function fetchBoardData(
     return { cards: [], paths: [], error: pathsResult.error.message }
   }
 
-  // Cast the points column (stored as Json) back to the typed array.
+  // Decompress the delta-encoded points column back to the typed array.
   const paths: DrawingPath[] = (pathsResult.data ?? []).map((row) => ({
     ...row,
-    points: row.points as unknown as Array<{ x: number; y: number }>,
+    points: decompressPoints(row.points as unknown as Array<Record<string, number>>),
   }))
 
   return {
