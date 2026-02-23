@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   metadataBase: process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL) : undefined,
   title: 'Collab Board',
   description: 'Real-time collaborative whiteboard',
+  icons: { icon: '/favicon.svg' },
 }
 
 export const viewport: Viewport = {
