@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import {
+  ArrowLeft,
   LayoutGrid,
   Share2,
   Download,
@@ -121,10 +123,15 @@ export default function BoardHeader({ onTitleSave, onExport, canExport = true }:
     <header className="flex h-[52px] shrink-0 items-center justify-between border-b glass-surface px-4">
       {/* ---- Left side ---- */}
       <div className="flex items-center gap-2">
-        {/* Icon box */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-md border bg-background">
-          <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
+        {/* Back to dashboard */}
+        <Link
+          href="/dashboard"
+          className="flex h-7 w-7 items-center justify-center rounded-md border bg-background hover:bg-slate-100 transition"
+          title="Back to dashboard"
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 text-muted-foreground" />
+        </Link>
 
         {/* Inline editable title (read-only for guests) */}
         {isViewOnly ? (
