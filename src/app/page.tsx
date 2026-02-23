@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
 import NavBar from '@/components/landing/NavBar'
 import HeroSection from '@/components/landing/HeroSection'
 import ProblemsSection from '@/components/landing/ProblemsSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
 import CTASection from '@/components/landing/CTASection'
 import Footer from '@/components/landing/Footer'
-
-const MotionProvider = dynamic(() => import('@/components/providers/MotionProvider'), { ssr: false })
+import MotionProvider from '@/components/providers/MotionProvider'
 
 export const metadata: Metadata = {
   title: 'Collab Board',
